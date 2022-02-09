@@ -1,16 +1,18 @@
-#include<cuda_runtime.h>
-#include "device_launch_parameters.h"
-#include <iostream>
 
+
+#include "kmeanscu.cuh"
+
+
+/*
 __global__ void vectAdd(int* a, int* b, int* c)
 {
 	int i = threadIdx.x;
 	c[i] = a[i] + b[i];
 }
-
-int main()
+*/
+/*__host__ int prova()
 {
-	int a[] = { 1,2,3 };
+	int a[] = {1,2,3};
 	int b[] = { 4,5,6 };
 	int c[sizeof(a) / sizeof(int)] = { 0 };
 
@@ -38,6 +40,47 @@ int main()
 	{
 		std::cout << c[i] << std::endl;
 	}
+	
+
+	
+
 	return 0;
 
 }
+
+
+
+__device__ double distance(double x1_point, double y1_point, double x2_point, double y2_point)
+{
+	return sqrt(pow(x1_point - x2_point, 2) + pow(y1_point - y2_point, 2));
+}
+
+
+__global__ void calculateDistanceCuda(double* vect_x, double* vect_y, centroid_point* cp, int* c_vect)
+{
+	double dist, temp;
+	int cluster_class;
+
+	const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	
+	if (idx >= DATASET_SIZE) return;
+
+	dist = distance(vect_x[idx], vect_y[idx], cp->x_c[0], cp->y_c[0]);
+	cluster_class = 0;
+
+	for (int j = 1; j < CLUSTER_SIZE; j++)
+	{
+		temp = distance(vect_x[idx], vect_y[idx], cp->x_c[j], cp->y_c[j]);
+
+		if (dist > temp) // looking for the minimum distance given a point
+		{
+			cluster_class = j;
+			dist = temp;
+		}
+	}
+
+	// updating to the beloging cluster 
+	c_vect[idx] = cluster_class;
+
+	
+}*/

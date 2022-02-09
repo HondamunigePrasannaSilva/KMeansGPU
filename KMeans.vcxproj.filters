@@ -18,15 +18,19 @@
     <CudaCompile Include="File.cu">
       <Filter>File di origine</Filter>
     </CudaCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <CudaCompile Include="main.cu">
       <Filter>File di origine</Filter>
-    </ClCompile>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Intestazione.h">
       <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="kmeanscu.cuh">
+      <Filter>File di origine</Filter>
+    </ClInclude>
+    <ClInclude Include="defines.h">
+      <Filter>File di origine</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

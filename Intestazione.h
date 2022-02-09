@@ -1,26 +1,37 @@
+#ifndef INTESTAZIONE
 
 
-#define DATASET_SIZE    360177
-#define CLUSTER_SIZE    469
-#define THRESHOLD       0.0001
+#include <iostream>
+#include <fstream>
+#include <time.h>
+#include <math.h>
+#include <chrono>
+#include<vector>
+#include<string>
+#include<algorithm>
+
+#include "defines.h"
 
 
-struct centroid_point
-{
-    double x_c[CLUSTER_SIZE];
-    double y_c[CLUSTER_SIZE];
-};
 
-void randomCentroids(centroid_point& cp, double vect_x[], double vect_y[]);
-bool updateCentroids(int vect_c[], double vect_x[], double vect_y[], centroid_point& cp);
-void calculateDistance(double vect_x[], double vect_y[], centroid_point cp, int c_vect[]);
+using std::cout;
+using std::endl;
+using std::chrono::high_resolution_clock;
+using std::chrono::duration_cast;
+using std::vector;
+
+void randomCentroids(double cp_x[], double cp_y[], double vect_x[], double vect_y[]);
+void printClusterPoint(double cp_x[], double cp_y[]);
 double distance(double x1_point, double y1_point, double x2_point, double y2_point);
-void printClusterPoint(centroid_point cp);
+void loadDataset(std::string DATA_PATH, double x[], double y[], int c[]);
+void calculateDistance(double vect_x[], double vect_y[], double cp_x[], double cp_y[], int c_vect[]);
+
+
+bool updateCentroids(int vect_c[], double vect_x[], double vect_y[], double cp_x[], double cp_y[]);
 
 
 
-
-void randomCentroids(centroid_point& cp, double vect_x[], double vect_y[])
+void randomCentroids(double cp_x[], double cp_y[], double vect_x[], double vect_y[])
 {
     double max_x, min_x, max_y, min_y;
 
@@ -31,24 +42,23 @@ void randomCentroids(centroid_point& cp, double vect_x[], double vect_y[])
     min_x = *std::min_element(vect_x, vect_x + DATASET_SIZE);
     min_y = *std::min_element(vect_y, vect_y + DATASET_SIZE);
     cout << "max_x: " << max_x << "max_y: " << max_y << "min_x: " << min_x << "min_y: " << min_y << endl;
-
     for (int i = 0; i < CLUSTER_SIZE; i++)
     {
-        cp.x_c[i] = (max_x - min_x) * ((double)rand() / (double)RAND_MAX) + min_x;
-        cp.y_c[i] = (max_y - min_y) * ((double)rand() / (double)RAND_MAX) + min_y;
+        cp_x[i] = (max_x - min_x) * ((double)rand() / (double)RAND_MAX) + min_x;
+        cp_y[i] = (max_y - min_y) * ((double)rand() / (double)RAND_MAX) + min_y;
     }
-
 }
 
-void printClusterPoint(centroid_point cp)
+void printClusterPoint(double cp_x[], double cp_y[])
 {
     for (int i = 0; i < CLUSTER_SIZE; i++)
     {
-        cout << cp.x_c[i] << "," << cp.y_c[i] << endl;
+        cout << cp_x[i] << "," << cp_y[i] << endl;
+
     }
 }
 
-void calculateDistance(double vect_x[], double vect_y[], centroid_point cp, int c_vect[])
+void calculateDistance(double vect_x[], double vect_y[], double cp_x[], double cp_y[], int c_vect[])
 {
     double dist, temp;
     int cluster_class;
@@ -58,12 +68,12 @@ void calculateDistance(double vect_x[], double vect_y[], centroid_point cp, int 
         // calculating distance between dataset point and centroid
         // selecting the centroid with minium distance
 
-        dist = distance(vect_x[i], vect_y[i], cp.x_c[0], cp.y_c[0]);
+        dist = distance(vect_x[i], vect_y[i], cp_x[0], cp_y[0]);
         cluster_class = 0;
 
         for (int j = 1; j < CLUSTER_SIZE; j++)
         {
-            temp = distance(vect_x[i], vect_y[i], cp.x_c[j], cp.y_c[j]);
+            temp = distance(vect_x[i], vect_y[i], cp_x[j], cp_y[j]);
             if (dist > temp) // looking for the minimum distance given a point
             {
                 cluster_class = j;
@@ -85,7 +95,7 @@ double distance(double x1_point, double y1_point, double x2_point, double y2_poi
     //return (abs(x1_point-x2_point)+abs(y1_point-y2_point));
 }
 
-bool updateCentroids(int vect_c[], double vect_x[], double vect_y[], centroid_point& cp)
+bool updateCentroids(int vect_c[], double vect_x[], double vect_y[], double cp_x[], double cp_y[])
 {
     /*
         i centroidi aggiornati non sono punti del dataset
@@ -116,7 +126,7 @@ bool updateCentroids(int vect_c[], double vect_x[], double vect_y[], centroid_po
         }
 
         //counting unchange centroid
-        double cond = distance(cp.x_c[i], cp.y_c[i], update_x, update_y);
+        double cond = distance(cp_x[i], cp_y[i], update_x, update_y);
 
 
         if (cond <= THRESHOLD)
@@ -125,8 +135,8 @@ bool updateCentroids(int vect_c[], double vect_x[], double vect_y[], centroid_po
         // updating centroids
         if (num_points != 0 && cond > THRESHOLD)
         {
-            cp.x_c[i] = update_x;
-            cp.y_c[i] = update_y;
+            cp_x[i] = update_x;
+            cp_y[i] = update_y;
         }
     }
     if (count > 0.7 * CLUSTER_SIZE)
@@ -134,3 +144,37 @@ bool updateCentroids(int vect_c[], double vect_x[], double vect_y[], centroid_po
 
     return true;
 }
+
+
+void loadDataset(std::string DATASET_PATH, double x[], double y[], int c[])
+{
+    std::ifstream myfile;
+    std::ifstream myfilepath;
+    std::string   line, x_s, y_s;
+    
+    int  posC;
+
+    myfile.open(DATASET_PATH);
+
+    for (int i = 0; i < DATASET_SIZE; i++)
+    {
+        // get line with new line delimiter
+        getline(myfile, line, '\n');
+
+        // split the line in two part using the comma delimiter
+        posC = line.find_first_of(',');
+        x_s = line.substr(0, posC);
+        y_s = line.substr(posC + 1);
+        //parsing from string to double and filling to the array of struct
+        x[i] = stod(x_s);
+        y[i] = stod(y_s);
+        c[i] = -1;
+
+    }
+
+    myfile.close();
+}
+
+#define INTESTAZIONE
+#endif // !INTESTAZIONE
+
