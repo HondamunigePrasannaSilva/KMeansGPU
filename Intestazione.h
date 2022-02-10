@@ -6,48 +6,25 @@
 #include <time.h>
 #include <math.h>
 #include <chrono>
-#include<vector>
+
 #include<string>
 #include<algorithm>
 
 #include "defines.h"
 
-
+#include "kmeanscu.cuh"
 
 using std::cout;
 using std::endl;
 using std::chrono::high_resolution_clock;
 using std::chrono::duration_cast;
-using std::vector;
 
-void randomCentroids(double cp_x[], double cp_y[], double vect_x[], double vect_y[]);
+
 void printClusterPoint(double cp_x[], double cp_y[]);
-double distance(double x1_point, double y1_point, double x2_point, double y2_point);
-void loadDataset(std::string DATA_PATH, double x[], double y[], int c[]);
-void calculateDistance(double vect_x[], double vect_y[], double cp_x[], double cp_y[], int c_vect[]);
 
+void loadDataset(std::string DATA_PATH, double x[], double y[], int c[]);
 
 bool updateCentroids(int vect_c[], double vect_x[], double vect_y[], double cp_x[], double cp_y[]);
-
-
-
-void randomCentroids(double cp_x[], double cp_y[], double vect_x[], double vect_y[])
-{
-    double max_x, min_x, max_y, min_y;
-
-    // calculating max and min of the points to generate random centroids
-
-    max_x = *std::max_element(vect_x, vect_x + DATASET_SIZE);
-    max_y = *std::max_element(vect_y, vect_y + DATASET_SIZE);
-    min_x = *std::min_element(vect_x, vect_x + DATASET_SIZE);
-    min_y = *std::min_element(vect_y, vect_y + DATASET_SIZE);
-    cout << "max_x: " << max_x << "max_y: " << max_y << "min_x: " << min_x << "min_y: " << min_y << endl;
-    for (int i = 0; i < CLUSTER_SIZE; i++)
-    {
-        cp_x[i] = (max_x - min_x) * ((double)rand() / (double)RAND_MAX) + min_x;
-        cp_y[i] = (max_y - min_y) * ((double)rand() / (double)RAND_MAX) + min_y;
-    }
-}
 
 void printClusterPoint(double cp_x[], double cp_y[])
 {
@@ -57,7 +34,7 @@ void printClusterPoint(double cp_x[], double cp_y[])
 
     }
 }
-
+void calculateDistance(double vect_x[], double vect_y[], double cp_x[], double cp_y[], int c_vect[]);
 void calculateDistance(double vect_x[], double vect_y[], double cp_x[], double cp_y[], int c_vect[])
 {
     double dist, temp;
@@ -89,11 +66,7 @@ void calculateDistance(double vect_x[], double vect_y[], double cp_x[], double c
 
 }
 
-double distance(double x1_point, double y1_point, double x2_point, double y2_point)
-{
-    return sqrt(pow(x1_point - x2_point, 2) + pow(y1_point - y2_point, 2));
-    //return (abs(x1_point-x2_point)+abs(y1_point-y2_point));
-}
+
 
 bool updateCentroids(int vect_c[], double vect_x[], double vect_y[], double cp_x[], double cp_y[])
 {

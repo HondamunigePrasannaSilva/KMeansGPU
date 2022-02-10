@@ -1,5 +1,12 @@
 
 
+#include<algorithm>
+#include <iostream>
+#include <math.h>
+
+
+using std::cout;
+using std::endl;
 #include "kmeanscu.cuh"
 
 
@@ -35,14 +42,6 @@ __global__ void vectAdd(int* a, int* b, int* c)
 	vectAdd <<< 1, sizeof(a) / sizeof(int) >>> (cudaA, cudaB, cudaC);
 
 	cudaMemcpy(c, cudaC, sizeof(c), cudaMemcpyDeviceToHost);
-
-	for (int i = 0; i < 3; i++)
-	{
-		std::cout << c[i] << std::endl;
-	}
-	
-
-	
 
 	return 0;
 
@@ -83,4 +82,45 @@ __global__ void calculateDistanceCuda(double* vect_x, double* vect_y, centroid_p
 	c_vect[idx] = cluster_class;
 
 	
-}*/
+}
+*/
+
+__device__ int random(unsigned int seed, int i)
+{
+	/* CUDA's random number library uses curandState_t to keep track of the seed value
+	 we will store a random state for every thread  */
+	curandState_t state;
+
+	/* we have to initialize the state */
+	curand_init(seed, /* the seed controls the sequence of random values that are produced */
+		0, /* the sequence number is only important with multiple cores */
+		i, /* the offset is how much extra we advance in the sequence for each call, can be 0 */
+		&state);
+
+	
+	return curand(&state) % DATASET_SIZE;
+}
+
+
+__global__ void randomCentroidsCuda(double cp_x[], double cp_y[], double* vect_x, double* vect_y, unsigned int seed)
+{
+	const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx >= CLUSTER_SIZE) return;
+
+	int rand;
+	
+	rand = random(seed, idx);
+
+	// scelgo un punto randomico dal dataset e lo seleziono come centroide iniziale
+	cp_x[idx] = vect_x[rand];
+	cp_y[idx] = vect_y[rand];
+}
+
+
+__device__ double distance(double x1_point, double y1_point, double x2_point, double y2_point)
+{
+	return sqrt(pow(x1_point - x2_point, 2) + pow(y1_point - y2_point, 2));
+	//return (abs(x1_point-x2_point)+abs(y1_point-y2_point));
+}
+
