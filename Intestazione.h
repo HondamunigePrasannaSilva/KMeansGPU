@@ -24,7 +24,7 @@ void printClusterPoint(double cp_x[], double cp_y[]);
 
 void loadDataset(std::string DATA_PATH, double x[], double y[], int c[]);
 
-bool updateCentroids(int vect_c[], double vect_x[], double vect_y[], double cp_x[], double cp_y[]);
+//bool updateCentroids(int vect_c[], double vect_x[], double vect_y[], double cp_x[], double cp_y[]);
 
 void printClusterPoint(double cp_x[], double cp_y[])
 {
@@ -34,46 +34,10 @@ void printClusterPoint(double cp_x[], double cp_y[])
 
     }
 }
-void calculateDistance(double vect_x[], double vect_y[], double cp_x[], double cp_y[], int c_vect[]);
-void calculateDistance(double vect_x[], double vect_y[], double cp_x[], double cp_y[], int c_vect[])
-{
-    double dist, temp;
-    int cluster_class;
 
-    for (int i = 0; i < DATASET_SIZE; i++)
-    {
-        // calculating distance between dataset point and centroid
-        // selecting the centroid with minium distance
-
-        dist = distance(vect_x[i], vect_y[i], cp_x[0], cp_y[0]);
-        cluster_class = 0;
-
-        for (int j = 1; j < CLUSTER_SIZE; j++)
-        {
-            temp = distance(vect_x[i], vect_y[i], cp_x[j], cp_y[j]);
-            if (dist > temp) // looking for the minimum distance given a point
-            {
-                cluster_class = j;
-                dist = temp;
-            }
-        }
-
-        // updating to the beloging cluster 
-        c_vect[i] = cluster_class;
-
-    }
-
-
-}
-
-
-
+/*
 bool updateCentroids(int vect_c[], double vect_x[], double vect_y[], double cp_x[], double cp_y[])
 {
-    /*
-        i centroidi aggiornati non sono punti del dataset
-    */
-
     double update_x, update_y;
     int num_points, count = 0;
 
@@ -117,7 +81,7 @@ bool updateCentroids(int vect_c[], double vect_x[], double vect_y[], double cp_x
 
     return true;
 }
-
+*/
 
 void loadDataset(std::string DATASET_PATH, double x[], double y[], int c[])
 {
