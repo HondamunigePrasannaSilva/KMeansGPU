@@ -62,6 +62,18 @@ void loadDataset(std::string DATASET_PATH, double x[], double y[], int c[])
     myfile.close();
 }
 
+bool cudaErrorStatus(std::string cmd, cudaError_t cudaStatus, std::string var_name)
+{
+    if (cudaStatus != cudaSuccess) 
+    {
+        fprintf(stderr, "cudaMalloc vect_x failed!");
+        cout << stderr << " " << cmd << " " << var_name << " FAILED!" << endl;
+        return true;
+    }
+    return false;
+}
+
+
 #define INTESTAZIONE
 #endif // !INTESTAZIONE
 

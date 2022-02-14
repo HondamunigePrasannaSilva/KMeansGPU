@@ -27,8 +27,12 @@ int main()
     double  y[DATASET_SIZE];
     int     c[DATASET_SIZE];
     
-    double cpx[CLUSTER_SIZE];
-    double cpy[CLUSTER_SIZE];
+    double cpx[CLUSTER_SIZE];   // array of centroid, x value
+    double cpy[CLUSTER_SIZE];   // array of centroid, y value
+
+    double sum_cen_x[CLUSTER_SIZE];
+    double sum_cen_y[CLUSTER_SIZE];
+    int    num_cen[CLUSTER_SIZE];
 
 
     // -----------------------------------------
@@ -41,45 +45,50 @@ int main()
     double* cudacpx = 0;
     double* cudacpy = 0;
 
+    double* cudascx = 0;
+    double* cudascy = 0;
+    int* cudanc  = 0;
+
     int*    change = 0;
     cudaError_t cudaStatus;
-
+    
     cudaStatus = cudaMalloc((void**)&cudax, DATASET_SIZE * sizeof(double));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc vect_x failed!");
-        goto Error;
-    }
+    if (cudaErrorStatus("cudaMalloc", cudaStatus, "cudax")) goto Error;
+   
 
     cudaStatus = cudaMalloc((void**)&cuday, DATASET_SIZE * sizeof(double));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc vect_y failed!");
-        goto Error;
-    }
+    if (cudaErrorStatus("cudaMalloc", cudaStatus, "cuday")) goto Error;
 
     cudaStatus = cudaMalloc((void**)&cudac, DATASET_SIZE * sizeof(int));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc vect_c  failed!");
-        goto Error;
-    }
-    
+    if (cudaErrorStatus("cudaMalloc", cudaStatus, "cudac")) goto Error;
+   
     cudaStatus = cudaMalloc((void**)&cudacpx, DATASET_SIZE * sizeof(double));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc vect_cpx failed!");
-        goto Error;
-    }
+    if (cudaErrorStatus("cudaMalloc", cudaStatus, "cudacpx")) goto Error;
+   
 
     cudaStatus = cudaMalloc((void**)&cudacpy, DATASET_SIZE * sizeof(double));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc vect_cpx failed!");
-        goto Error;
-    }
+    if (cudaErrorStatus("cudaMalloc", cudaStatus, "cudacpy")) goto Error;
 
-    cudaStatus = cudaMalloc((void**)&change, DATASET_SIZE * sizeof(int));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc vect_cpx failed!");
-        goto Error;
-    }
 
+    cudaStatus = cudaMalloc((void**)&change, sizeof(int));
+    if (cudaErrorStatus("cudaMalloc", cudaStatus, "change")) goto Error;
+
+
+
+    cudaStatus = cudaMalloc((void**)&cudascx, CLUSTER_SIZE * sizeof(double));
+    if (cudaErrorStatus("cudaMalloc", cudaStatus, "cudascx")) goto Error;
+
+    cudaStatus = cudaMalloc((void**)&cudascy, CLUSTER_SIZE * sizeof(double));
+    if (cudaErrorStatus("cudaMalloc", cudaStatus, "cudascy")) goto Error;
+
+    cudaStatus = cudaMalloc((void**)&cudanc, CLUSTER_SIZE * sizeof(int));
+    if (cudaErrorStatus("cudaMalloc", cudaStatus, "cudanc")) goto Error;
+
+
+    // initialize sum of centroid and number of data of each centroid to 0.
+    cudaMemset(cudascx, 0, CLUSTER_SIZE * sizeof(double));
+    cudaMemset(cudascy, 0, CLUSTER_SIZE * sizeof(double));
+    cudaMemset(cudanc, 0,  CLUSTER_SIZE * sizeof(int));
 
 
     // -----------------------------------------
@@ -93,15 +102,11 @@ int main()
     // copia del dataset nella gpu
   
     cudaStatus = cudaMemcpy(cudax, x, DATASET_SIZE * sizeof(double), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy vect_x failed!");
-        goto Error;
-    }
+    if (cudaErrorStatus("cudaMemcpy", cudaStatus, "x->cudax")) goto Error;
+
     cudaStatus = cudaMemcpy(cuday, y, DATASET_SIZE * sizeof(double), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy vect_y failed!");
-        goto Error;
-    }
+    if (cudaErrorStatus("cudaMemcpy", cudaStatus, "y->cuday")) goto Error;
+
    
     // -----------------------------------------------------
 
@@ -115,17 +120,13 @@ int main()
 
 
     cudaStatus = cudaGetLastError();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "randomCentroidCuda launch failed: %s\n", cudaGetErrorString(cudaStatus));
-        goto Error;
-    }
+    if (cudaErrorStatus("randomCentroidCuda", cudaStatus, cudaGetErrorString(cudaStatus))) goto Error;
 
     cudaStatus = cudaDeviceSynchronize();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching randomCentroidCuda!\n", cudaStatus);
         goto Error;
     }
-
   
     
 
@@ -170,29 +171,32 @@ int main()
 
         cout << "Updating centroids..." << endl;
 
-        //isChange = updateCentroids(c, x, y, cpx, cpy);
-        updateCentroids<<<1,1>>>(cudac, cudax, cuday, cudacpx, cudacpy, change);
+        //updateCentroids<<<1,1>>>(cudac, cudax, cuday, cudacpx, cudacpy, change);
         
+        calculateCentroidMeans<<<BLOCKDIM , WRAPDIM>>>(cudac, cudax, cuday, cudascx, cudascy, cudanc);
+        cudaStatus = cudaGetLastError();
+        if (cudaErrorStatus("calculateCentroidMeans ", cudaStatus, cudaGetErrorString(cudaStatus))) goto Error;
+
+
+        
+
+        
+
+
+
         cout << "End Updating centroids..." << endl;
         i++;
 
+        /*
         cudaStatus = cudaMemcpy(isChange, change, sizeof(int), cudaMemcpyDeviceToHost);
        
         if (cudaStatus != cudaSuccess) {
             fprintf(stderr, "cudaMemcpy change failed!");
             goto Error;
-        }
+        }*/
 
     }
 
-
-
-    // copio i cluster dei punti e i centroidi dalla gpu alla memoria ram
-    //cudaMemcpy(c, cudac, sizeof(cudac), cudaMemcpyDeviceToHost);
-    //cudaMemcpy(cpx, cudacpx, sizeof(cudacpx), cudaMemcpyDeviceToHost);
-    //cudaMemcpy(cpy, cudacpy, sizeof(cudacpy), cudaMemcpyDeviceToHost);
-
-    
     cudaStatus = cudaMemcpy(cpx, cudacpx, CLUSTER_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy vect_cpx failed!");

@@ -3,11 +3,11 @@
 #include<algorithm>
 #include <iostream>
 #include <math.h>
-
+#include "kmeanscu.cuh"
 
 using std::cout;
 using std::endl;
-#include "kmeanscu.cuh"
+
 
 
 
@@ -45,7 +45,7 @@ __global__ void randomCentroidsCuda(double cp_x[], double cp_y[], double* vect_x
 }
 
 
-__device__ double distance(double x1_point, double y1_point, double x2_point, double y2_point)
+__device__ __host__ double distance(double x1_point, double y1_point, double x2_point, double y2_point)
 {
 	return sqrt(pow(x1_point - x2_point, 2) + pow(y1_point - y2_point, 2));
 }
@@ -60,21 +60,17 @@ __global__ void calculateDistanceCuda(double vect_x[], double vect_y[], double c
     int cluster_class;
 
     __shared__ double s_vect_x[WRAPDIM];
+    s_vect_x[threadIdx.x] = vect_x[idx];
+
     __shared__ double s_vect_y[WRAPDIM];
+    s_vect_y[threadIdx.x] = vect_y[idx];
 
     __shared__ double s_vect_cx[CLUSTER_SIZE];
     __shared__ double s_vect_cy[CLUSTER_SIZE];
 
+
     if (threadIdx.x == 0)
     {
-        for (int i = 0; i < blockDim.x; i++)
-        {
-            if (i + idx >= DATASET_SIZE) break;
-
-            s_vect_x[i] = vect_x[i+idx];
-            s_vect_y[i] = vect_y[i+idx];
-        }
-
         for (int i = 0; i < CLUSTER_SIZE; i++)
         {
             s_vect_cx[i] = cp_x[i];
@@ -102,9 +98,10 @@ __global__ void calculateDistanceCuda(double vect_x[], double vect_y[], double c
 
     // updating to the beloging cluster 
     c_vect[idx] = cluster_class;
+
 }
 
-__global__ void updateCentroids(int vect_c[], double vect_x[], double vect_y[], double cp_x[], double cp_y[], int* change)
+__global__ void updateCentroidsCuda(int vect_c[], double vect_x[], double vect_y[], double cp_x[], double cp_y[], int* change)
 {
     double update_x, update_y;
     int num_points, count = 0;
@@ -150,4 +147,60 @@ __global__ void updateCentroids(int vect_c[], double vect_x[], double vect_y[], 
         *change = 1;
     else
         *change = 0;
+}
+
+__global__ void calculateCentroidMeans(int vect_c[], double vect_x[], double vect_y[], double sum_c_x[], double sum_c_y[], int num_c[])
+{
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (idx >= DATASET_SIZE) return;
+
+    __shared__ float s_vect_x[WRAPDIM];
+    s_vect_x[threadIdx.x] = vect_x[idx];
+
+    __shared__ float s_vect_y[WRAPDIM];
+    s_vect_y[threadIdx.x] = vect_y[idx];
+
+    __shared__ int s_vect_c[WRAPDIM];
+    s_vect_c[threadIdx.x] = vect_c[idx];
+
+
+    __shared__ double partial_sum_x[CLUSTER_SIZE] = {0};
+    __shared__ double partial_sum_y[CLUSTER_SIZE] = {0};
+    __shared__ int    partial_num[CLUSTER_SIZE] = {0};
+
+    __syncthreads();
+
+    if (threadIdx.x == 0)
+    {
+       
+        for (int i = 0; i < blockDim.x; i++)
+        {
+            partial_sum_x[ s_vect_c[i] ] += s_vect_x[i];
+            partial_sum_y[ s_vect_c[i]] += s_vect_y[i];
+            partial_num  [ s_vect_c[i] ]++;
+        }
+
+        for (int i = 0; i < CLUSTER_SIZE; i++)
+        {
+            atomicAdd(&sum_c_x[i], partial_sum_x[i]);
+            
+            atomicAdd(&sum_c_y[i], partial_sum_y[i]);
+
+            atomicAdd(&num_c[i], partial_num[i]);
+        }
+
+    }
+
+
+}
+
+
+
+__global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double cp_x[], double cp_y[], int* change)
+{
+    // calcolare la media dei centroidi
+    // calcolare la distanza tra il vecchio centroide e quello nuovo
+    // controllo della threashold
+    // fare un atomic per incrementare il contatore di centroidi non modificati
 }
