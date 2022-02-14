@@ -58,16 +58,41 @@ __global__ void calculateDistanceCuda(double vect_x[], double vect_y[], double c
 
     double dist, temp;
     int cluster_class;
+
+    __shared__ double s_vect_x[WRAPDIM];
+    __shared__ double s_vect_y[WRAPDIM];
+
+    __shared__ double s_vect_cx[CLUSTER_SIZE];
+    __shared__ double s_vect_cy[CLUSTER_SIZE];
+
+    if (threadIdx.x == 0)
+    {
+        for (int i = 0; i < blockDim.x; i++)
+        {
+            if (i + idx >= DATASET_SIZE) break;
+
+            s_vect_x[i] = vect_x[i+idx];
+            s_vect_y[i] = vect_y[i+idx];
+        }
+
+        for (int i = 0; i < CLUSTER_SIZE; i++)
+        {
+            s_vect_cx[i] = cp_x[i];
+            s_vect_cy[i] = cp_y[i];
+        }
+    }
+    __syncthreads();
+
     
     // calculating distance between dataset point and centroid
     // selecting the centroid with minium distance
 
-    dist = distance(vect_x[idx], vect_y[idx], cp_x[0], cp_y[0]);
+    dist = distance(s_vect_x[threadIdx.x], s_vect_y[threadIdx.x], s_vect_cx[0], s_vect_cy[0]);
     cluster_class = 0;
     
-    for (int j = 1; j < CLUSTER_SIZE; j++)
+    for (int j = 0; j < CLUSTER_SIZE; j++)
     {
-        temp = distance(vect_x[idx], vect_y[idx], cp_x[j], cp_y[j]);
+        temp = distance(s_vect_x[threadIdx.x], s_vect_y[threadIdx.x], s_vect_cx[j], s_vect_cy[j]);
         if (dist > temp) // looking for the minimum distance given a point
         {
             cluster_class = j;
@@ -81,11 +106,6 @@ __global__ void calculateDistanceCuda(double vect_x[], double vect_y[], double c
 
 __global__ void updateCentroids(int vect_c[], double vect_x[], double vect_y[], double cp_x[], double cp_y[], int* change)
 {
-
-    /*
-        i centroidi aggiornati non sono punti del dataset
-    */
-
     double update_x, update_y;
     int num_points, count = 0;
 
@@ -123,9 +143,10 @@ __global__ void updateCentroids(int vect_c[], double vect_x[], double vect_y[], 
             cp_x[i] = update_x;
             cp_y[i] = update_y;
         }
+
     }
 
-    if (count > 0.7 * CLUSTER_SIZE)
+    if (count > PERCENTAGE * CLUSTER_SIZE)
         *change = 1;
     else
         *change = 0;

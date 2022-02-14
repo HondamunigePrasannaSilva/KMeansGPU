@@ -3,9 +3,11 @@
 
 
 #include<cuda_runtime.h>
-#include "device_launch_parameters.h"
 #include <iostream>
 #include "defines.h"
+
+#include <cuda.h>
+#include "device_launch_parameters.h"
 #include <curand.h>
 #include <curand_kernel.h>
 
@@ -22,4 +24,5 @@ __global__ void updateCentroids(int vect_c[], double vect_x[], double vect_y[], 
 
 
 #define KMEANSCU
+
 #endif // !KMEANSCU

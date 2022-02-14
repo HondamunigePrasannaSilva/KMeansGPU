@@ -24,8 +24,6 @@ void printClusterPoint(double cp_x[], double cp_y[]);
 
 void loadDataset(std::string DATA_PATH, double x[], double y[], int c[]);
 
-//bool updateCentroids(int vect_c[], double vect_x[], double vect_y[], double cp_x[], double cp_y[]);
-
 void printClusterPoint(double cp_x[], double cp_y[])
 {
     for (int i = 0; i < CLUSTER_SIZE; i++)
@@ -34,54 +32,6 @@ void printClusterPoint(double cp_x[], double cp_y[])
 
     }
 }
-
-/*
-bool updateCentroids(int vect_c[], double vect_x[], double vect_y[], double cp_x[], double cp_y[])
-{
-    double update_x, update_y;
-    int num_points, count = 0;
-
-    for (int i = 0; i < CLUSTER_SIZE; i++)
-    {
-        update_x = update_y = num_points = 0;
-
-        for (int j = 0; j < DATASET_SIZE; j++)
-        {
-            if (vect_c[j] == i)
-            {
-                update_x += vect_x[j];
-                update_y += vect_y[j];
-                num_points++;
-            }
-        }
-
-        // calculating che the center of the points given a cluster
-        if (num_points != 0)
-        {
-            update_x = update_x / num_points;
-            update_y = update_y / num_points;
-        }
-
-        //counting unchange centroid
-        double cond = distance(cp_x[i], cp_y[i], update_x, update_y);
-
-
-        if (cond <= THRESHOLD)
-            count++;
-
-        // updating centroids
-        if (num_points != 0 && cond > THRESHOLD)
-        {
-            cp_x[i] = update_x;
-            cp_y[i] = update_y;
-        }
-    }
-    if (count > 0.7 * CLUSTER_SIZE)
-        return false;
-
-    return true;
-}
-*/
 
 void loadDataset(std::string DATASET_PATH, double x[], double y[], int c[])
 {

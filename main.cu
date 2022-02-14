@@ -155,26 +155,15 @@ int main()
     while (*isChange == 0)
     {
         cout << "Calculating cluster cycle: " << i + 1 << "..." << endl;
-        //calculateDistance(x, y, cpx, cpy, c);
-
-
-
-
-        calculateDistanceCuda<<<(DATASET_SIZE+32)/32, 32 >> >(cudax, cuday, cudacpx, cudacpy, cudac);
+        cout << BLOCKDIM;
+        calculateDistanceCuda<<<BLOCKDIM, WRAPDIM >>>(cudax, cuday, cudacpx, cudacpy, cudac);
 
 
         cudaStatus = cudaDeviceSynchronize();
         if (cudaStatus != cudaSuccess) {
-            fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching randomCentroidCuda!\n", cudaStatus);
+            fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching calculateDistanceCuda!\n", cudaStatus);
             goto Error;
         }
-
-
-        /*cudaStatus = cudaMemcpy(c, cudac, DATASET_SIZE * sizeof(int), cudaMemcpyDeviceToHost);
-        if (cudaStatus != cudaSuccess) {
-            fprintf(stderr, "cudaMemcpy vect_c failed!");
-            goto Error;
-        }*/
 
 
         cout << "End calculating cluster cycle: " << i + 1 << endl;
@@ -194,18 +183,6 @@ int main()
             goto Error;
         }
 
-
-        /*cudaStatus = cudaMemcpy(cudacpx, cpx, CLUSTER_SIZE * sizeof(double), cudaMemcpyHostToDevice);
-        if (cudaStatus != cudaSuccess) {
-            fprintf(stderr, "cudaMemcpy vect_cpx failed!");
-            goto Error;
-        }
-        cudaStatus = cudaMemcpy(cudacpy, cpy, CLUSTER_SIZE * sizeof(double), cudaMemcpyHostToDevice);
-        if (cudaStatus != cudaSuccess) {
-            fprintf(stderr, "cudaMemcpy vect_cpy failed!");
-            goto Error;
-        }*/
-
     }
 
 
@@ -215,7 +192,7 @@ int main()
     //cudaMemcpy(cpx, cudacpx, sizeof(cudacpx), cudaMemcpyDeviceToHost);
     //cudaMemcpy(cpy, cudacpy, sizeof(cudacpy), cudaMemcpyDeviceToHost);
 
-    /*
+    
     cudaStatus = cudaMemcpy(cpx, cudacpx, CLUSTER_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy vect_cpx failed!");
@@ -230,7 +207,7 @@ int main()
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy vect_c failed!");
         goto Error;
-    }*/
+    }
     
 
 
