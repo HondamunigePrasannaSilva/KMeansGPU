@@ -14,7 +14,10 @@ int main()
 
     // if the centroid are not changed then the method stops
     int* isChange = (int*)malloc(sizeof(int));
-    
+
+    double* count = (double*)malloc(sizeof(double));
+
+    *count = 0;
     *isChange = 0;
 
     int i = 0;
@@ -30,10 +33,10 @@ int main()
     double cpx[CLUSTER_SIZE];   // array of centroid, x value
     double cpy[CLUSTER_SIZE];   // array of centroid, y value
 
-    double sum_cen_x[CLUSTER_SIZE];
+    /*double sum_cen_x[CLUSTER_SIZE];
     double sum_cen_y[CLUSTER_SIZE];
     int    num_cen[CLUSTER_SIZE];
-
+    */
 
     // -----------------------------------------
     //alloccare memoria nella GPU
@@ -47,9 +50,10 @@ int main()
 
     double* cudascx = 0;
     double* cudascy = 0;
-    int* cudanc  = 0;
+    int*    cudanc  = 0;
 
     int*    change = 0;
+    double*    cudacount = 0;
     cudaError_t cudaStatus;
     
     cudaStatus = cudaMalloc((void**)&cudax, DATASET_SIZE * sizeof(double));
@@ -73,6 +77,8 @@ int main()
     cudaStatus = cudaMalloc((void**)&change, sizeof(int));
     if (cudaErrorStatus("cudaMalloc", cudaStatus, "change")) goto Error;
 
+    cudaStatus = cudaMalloc((void**)&cudacount, sizeof(double));
+    if (cudaErrorStatus("cudaMalloc", cudaStatus, "count")) goto Error;
 
 
     cudaStatus = cudaMalloc((void**)&cudascx, CLUSTER_SIZE * sizeof(double));
@@ -89,6 +95,12 @@ int main()
     cudaMemset(cudascx, 0, CLUSTER_SIZE * sizeof(double));
     cudaMemset(cudascy, 0, CLUSTER_SIZE * sizeof(double));
     cudaMemset(cudanc, 0,  CLUSTER_SIZE * sizeof(int));
+
+    cudaMemset(cudacount, 0,  sizeof(double));
+    cudaMemset(cudac, -1, sizeof(int));
+
+
+    
 
 
     // -----------------------------------------
@@ -114,10 +126,7 @@ int main()
     // generating random centroid for the first step of the method
     cout << "Generating first " << CLUSTER_SIZE << " centroids.." << endl;
 
-
-    
     randomCentroidsCuda <<< (CLUSTER_SIZE+32)/32, 32 >> > (cudacpx, cudacpy, cudax, cuday, time(NULL));
-
 
     cudaStatus = cudaGetLastError();
     if (cudaErrorStatus("randomCentroidCuda", cudaStatus, cudaGetErrorString(cudaStatus))) goto Error;
@@ -153,8 +162,10 @@ int main()
 
 
 
-    while (*isChange == 0)
+    while ((int) * count < PERCENTAGE * CLUSTER_SIZE)
+    //while (*isChange == 0)
     {
+        
         cout << "Calculating cluster cycle: " << i + 1 << "..." << endl;
         cout << BLOCKDIM;
         calculateDistanceCuda<<<BLOCKDIM, WRAPDIM >>>(cudax, cuday, cudacpx, cudacpy, cudac);
@@ -166,34 +177,61 @@ int main()
             goto Error;
         }
 
-
         cout << "End calculating cluster cycle: " << i + 1 << endl;
 
         cout << "Updating centroids..." << endl;
 
-        //updateCentroids<<<1,1>>>(cudac, cudax, cuday, cudacpx, cudacpy, change);
         
-        calculateCentroidMeans<<<BLOCKDIM , WRAPDIM>>>(cudac, cudax, cuday, cudascx, cudascy, cudanc);
+        calculateCentroidMeans << <BLOCKDIM, WRAPDIM >> >(cudac, cudax, cuday, cudascx, cudascy, cudanc);
+
         cudaStatus = cudaGetLastError();
         if (cudaErrorStatus("calculateCentroidMeans ", cudaStatus, cudaGetErrorString(cudaStatus))) goto Error;
 
 
-        
+        cudaStatus = cudaDeviceSynchronize();
+        if (cudaStatus != cudaSuccess) {
+            fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching calculateCentroidMeans!\n", cudaStatus);
+            goto Error;
+        }
 
-        
+        cudaMemset(cudacount, 0, sizeof(double));
 
+
+        updateC<<<BLOCKDIM_C, WRAPDIM_C>>>(cudascx, cudascy, cudanc,cudacpx, cudacpy, cudacount);
+
+
+        cudaMemset(cudascx, 0, CLUSTER_SIZE * sizeof(double));
+        cudaMemset(cudascy, 0, CLUSTER_SIZE * sizeof(double));
+        cudaMemset(cudanc, 0, CLUSTER_SIZE * sizeof(int));
+
+
+        cudaStatus = cudaGetLastError();
+        if (cudaErrorStatus("updateC ", cudaStatus, cudaGetErrorString(cudaStatus))) goto Error;
+
+
+        cudaStatus = cudaDeviceSynchronize();
+        if (cudaStatus != cudaSuccess) {
+            fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching updateC!\n", cudaStatus);
+            goto Error;
+        }
+
+
+
+        cudaStatus = cudaMemcpy(count, cudacount, sizeof(double), cudaMemcpyDeviceToHost);
+        cout << *count << endl;
+        if (cudaStatus != cudaSuccess) {
+            fprintf(stderr, "cudaMemcpy count failed!");
+            goto Error;
+        }
+        
+        //updateCentroidsCuda <<<1,1>>>(cudac, cudax, cuday, cudacpx, cudacpy, change);
+        //cudaStatus = cudaMemcpy(isChange, change, sizeof(int), cudaMemcpyDeviceToHost);
 
 
         cout << "End Updating centroids..." << endl;
         i++;
 
-        /*
-        cudaStatus = cudaMemcpy(isChange, change, sizeof(int), cudaMemcpyDeviceToHost);
        
-        if (cudaStatus != cudaSuccess) {
-            fprintf(stderr, "cudaMemcpy change failed!");
-            goto Error;
-        }*/
 
     }
 
@@ -227,6 +265,11 @@ Error:
     cudaFree(cudac);
     cudaFree(cudacpx);
     cudaFree(cudacpy);
+    cudaFree(cudascx);
+    cudaFree(cudascy);
+    cudaFree(cudanc);
+    cudaFree(change);
+    cudaFree(cudacount);
 
 
 

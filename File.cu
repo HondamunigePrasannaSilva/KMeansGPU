@@ -12,6 +12,7 @@ using std::endl;
 
 
 
+
 __device__ int random(unsigned int seed, int i)
 {
 	/* CUDA's random number library uses curandState_t to keep track of the seed value
@@ -45,7 +46,7 @@ __global__ void randomCentroidsCuda(double cp_x[], double cp_y[], double* vect_x
 }
 
 
-__device__ __host__ double distance(double x1_point, double y1_point, double x2_point, double y2_point)
+__device__ double distance(double x1_point, double y1_point, double x2_point, double y2_point)
 {
 	return sqrt(pow(x1_point - x2_point, 2) + pow(y1_point - y2_point, 2));
 }
@@ -68,7 +69,6 @@ __global__ void calculateDistanceCuda(double vect_x[], double vect_y[], double c
     __shared__ double s_vect_cx[CLUSTER_SIZE];
     __shared__ double s_vect_cy[CLUSTER_SIZE];
 
-
     if (threadIdx.x == 0)
     {
         for (int i = 0; i < CLUSTER_SIZE; i++)
@@ -79,7 +79,6 @@ __global__ void calculateDistanceCuda(double vect_x[], double vect_y[], double c
     }
     __syncthreads();
 
-    
     // calculating distance between dataset point and centroid
     // selecting the centroid with minium distance
 
@@ -156,31 +155,41 @@ __global__ void calculateCentroidMeans(int vect_c[], double vect_x[], double vec
     if (idx >= DATASET_SIZE) return;
 
     __shared__ float s_vect_x[WRAPDIM];
-    s_vect_x[threadIdx.x] = vect_x[idx];
-
     __shared__ float s_vect_y[WRAPDIM];
-    s_vect_y[threadIdx.x] = vect_y[idx];
-
     __shared__ int s_vect_c[WRAPDIM];
+
+   
+
+    __shared__ double partial_sum_x[CLUSTER_SIZE];
+    __shared__ double partial_sum_y[CLUSTER_SIZE];
+    __shared__ int    partial_num[CLUSTER_SIZE];
+
+    s_vect_x[threadIdx.x] = vect_x[idx];
     s_vect_c[threadIdx.x] = vect_c[idx];
-
-
-    __shared__ double partial_sum_x[CLUSTER_SIZE] = {0};
-    __shared__ double partial_sum_y[CLUSTER_SIZE] = {0};
-    __shared__ int    partial_num[CLUSTER_SIZE] = {0};
-
+    s_vect_y[threadIdx.x] = vect_y[idx];
+    
+   
     __syncthreads();
 
     if (threadIdx.x == 0)
     {
-       
-        for (int i = 0; i < blockDim.x; i++)
+        int j;
+        for (int i = 0; i < CLUSTER_SIZE; i++)
         {
-            partial_sum_x[ s_vect_c[i] ] += s_vect_x[i];
-            partial_sum_y[ s_vect_c[i]] += s_vect_y[i];
-            partial_num  [ s_vect_c[i] ]++;
+            partial_sum_x[i] = partial_sum_y[i] = partial_num[i] = 0;
         }
-
+        
+        for (int i = 0; i < CLUSTER_SIZE; i++)
+        {
+            j = s_vect_c[i];
+            if (j != -1)
+            {
+                partial_sum_x[j] += s_vect_x[i];
+                partial_sum_y[j] += s_vect_y[i];
+                partial_num[j] += 1;
+            }
+         
+        }
         for (int i = 0; i < CLUSTER_SIZE; i++)
         {
             atomicAdd(&sum_c_x[i], partial_sum_x[i]);
@@ -197,10 +206,48 @@ __global__ void calculateCentroidMeans(int vect_c[], double vect_x[], double vec
 
 
 
-__global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double cp_x[], double cp_y[], int* change)
+__global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double cp_x[], double cp_y[], double* count)
 {
-    // calcolare la media dei centroidi
-    // calcolare la distanza tra il vecchio centroide e quello nuovo
+    
     // controllo della threashold
     // fare un atomic per incrementare il contatore di centroidi non modificati
+
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+    __shared__ int c[WRAPDIM_C];
+
+    if (idx >= CLUSTER_SIZE) return;
+
+    // Calculating the means of the centroids
+    sum_c_x[idx] = sum_c_x[idx] / num_c[idx];
+    sum_c_y[idx] = sum_c_y[idx] / num_c[idx];
+
+    // Checking the distance between the old and the new centroid
+
+    double dist = distance(cp_x[idx], cp_y[idx], sum_c_x[idx], sum_c_y[idx]);
+
+    __syncthreads();
+    
+    if (dist < THRESHOLD)
+        c[threadIdx.x] = 1;
+    else
+    {
+        c[threadIdx.x] = 0;
+        cp_x[idx] = sum_c_x[idx];
+        cp_y[idx] = sum_c_y[idx];
+    }
+    __syncthreads();  
+    
+    if (threadIdx.x == 0)
+    {
+        double sum = 0;
+        for (int i = 0; i < WRAPDIM_C; i++)
+        {
+            sum += c[i];
+        }
+        
+
+        atomicAdd(count,sum);
+    }
+
 }
