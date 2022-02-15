@@ -6,12 +6,10 @@
 #include"kmeanscu.cuh"
 
 
-
-
 int main()
 {
     std::string   DATASET_PATH;
-
+    DATASET_PATH = "Datasets/dataset/ds.txt";
     // if the centroid are not changed then the method stops
     int* isChange = (int*)malloc(sizeof(int));
 
@@ -106,7 +104,7 @@ int main()
     // -----------------------------------------
     
    
-    DATASET_PATH = "Datasets/dataset/ds.txt";
+    
     loadDataset(DATASET_PATH, x, y, c);
 
     cout << "Finish loading data.." << endl;
@@ -218,7 +216,6 @@ int main()
 
 
         cudaStatus = cudaMemcpy(count, cudacount, sizeof(double), cudaMemcpyDeviceToHost);
-        cout << *count << endl;
         if (cudaStatus != cudaSuccess) {
             fprintf(stderr, "cudaMemcpy count failed!");
             goto Error;
