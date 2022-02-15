@@ -6,17 +6,15 @@
 #include"kmeanscu.cuh"
 
 
+
 int main()
 {
     std::string   DATASET_PATH;
-    DATASET_PATH = "Datasets/dataset/ds.txt";
-    // if the centroid are not changed then the method stops
-    int* isChange = (int*)malloc(sizeof(int));
+    DATASET_PATH = "Datasets/dataset2/ds.txt";
 
     double* count = (double*)malloc(sizeof(double));
 
     *count = 0;
-    *isChange = 0;
 
     int i = 0;
     
@@ -24,18 +22,14 @@ int main()
 
     // declaring array for dataset point and for centroid points
     
-    double  x[DATASET_SIZE];
-    double  y[DATASET_SIZE];
-    int     c[DATASET_SIZE];
+    static double  x[DATASET_SIZE];
+    static double  y[DATASET_SIZE];
+    static int     c[DATASET_SIZE];
     
     double cpx[CLUSTER_SIZE];   // array of centroid, x value
     double cpy[CLUSTER_SIZE];   // array of centroid, y value
 
-    /*double sum_cen_x[CLUSTER_SIZE];
-    double sum_cen_y[CLUSTER_SIZE];
-    int    num_cen[CLUSTER_SIZE];
-    */
-
+  
     // -----------------------------------------
     //alloccare memoria nella GPU
 
@@ -51,7 +45,9 @@ int main()
     int*    cudanc  = 0;
 
     int*    change = 0;
+
     double*    cudacount = 0;
+
     cudaError_t cudaStatus;
     
     cudaStatus = cudaMalloc((void**)&cudax, DATASET_SIZE * sizeof(double));
@@ -124,7 +120,7 @@ int main()
     // generating random centroid for the first step of the method
     cout << "Generating first " << CLUSTER_SIZE << " centroids.." << endl;
 
-    randomCentroidsCuda <<< (CLUSTER_SIZE+32)/32, 32 >> > (cudacpx, cudacpy, cudax, cuday, time(NULL));
+    randomCentroidsCuda <<< BLOCKDIM_C, WRAPDIM_C >> > (cudacpx, cudacpy, cudax, cuday, time(NULL));
 
     cudaStatus = cudaGetLastError();
     if (cudaErrorStatus("randomCentroidCuda", cudaStatus, cudaGetErrorString(cudaStatus))) goto Error;
@@ -160,12 +156,12 @@ int main()
 
 
 
-    while ((int) * count < PERCENTAGE * CLUSTER_SIZE)
+    while ((int) *count < PERCENTAGE * CLUSTER_SIZE)
     //while (*isChange == 0)
     {
         
         cout << "Calculating cluster cycle: " << i + 1 << "..." << endl;
-        cout << BLOCKDIM;
+      
         calculateDistanceCuda<<<BLOCKDIM, WRAPDIM >>>(cudax, cuday, cudacpx, cudacpy, cudac);
 
 
@@ -193,8 +189,9 @@ int main()
         }
 
         cudaMemset(cudacount, 0, sizeof(double));
-
-
+        *count = 0;
+        cout << "count I " << (int) *count << endl;
+        
         updateC<<<BLOCKDIM_C, WRAPDIM_C>>>(cudascx, cudascy, cudanc,cudacpx, cudacpy, cudacount);
 
 
@@ -213,14 +210,15 @@ int main()
             goto Error;
         }
 
-
-
+      
+       
         cudaStatus = cudaMemcpy(count, cudacount, sizeof(double), cudaMemcpyDeviceToHost);
         if (cudaStatus != cudaSuccess) {
             fprintf(stderr, "cudaMemcpy count failed!");
             goto Error;
         }
-        
+        cout << "count F " <<*count << endl;
+
         //updateCentroidsCuda <<<1,1>>>(cudac, cudax, cuday, cudacpx, cudacpy, change);
         //cudaStatus = cudaMemcpy(isChange, change, sizeof(int), cudaMemcpyDeviceToHost);
 
@@ -228,7 +226,7 @@ int main()
         cout << "End Updating centroids..." << endl;
         i++;
 
-       
+    
 
     }
 
@@ -253,7 +251,9 @@ int main()
 
     // printing the centroid after the kmeans methods
     printClusterPoint(cpx, cpy);
+    
 
+    free(count);
 
 Error:
     // free dei puntatori

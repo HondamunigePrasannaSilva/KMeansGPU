@@ -216,7 +216,8 @@ __global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double 
     __shared__ int c[WRAPDIM_C];
 
     if (idx >= CLUSTER_SIZE) return;
-
+    for (int i = 0; i < WRAPDIM_C; i++)
+        c[i] = 0;
     // Calculating the means of the centroids
     sum_c_x[idx] = sum_c_x[idx] / num_c[idx];
     sum_c_y[idx] = sum_c_y[idx] / num_c[idx];
