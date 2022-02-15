@@ -27,6 +27,9 @@ void loadDataset(std::string DATA_PATH, double x[], double y[], int c[]);
 
 bool cudaErrorStatus(std::string cmd, cudaError_t cudaStatus, std::string var_name);
 
+void savaCSV(double x[], double y[], int c[]);
+
+
 #define INTESTAZIONE
 #endif // !INTESTAZIONE
 

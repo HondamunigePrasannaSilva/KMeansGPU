@@ -39,8 +39,6 @@ __device__  double distance(double x1_point, double y1_point, double x2_point, d
 
 __global__ void calculateDistanceCuda(double vect_x[], double vect_y[], double cp_x[], double cp_y[], int c_vect[]);
 
-__global__ void updateCentroidsCuda(int vect_c[], double vect_x[], double vect_y[], double cp_x[], double cp_y[], int *change);
-
 __global__ void calculateCentroidMeans(int vect_c[], double vect_x[], double vect_y[], double sum_c_x[], double sum_c_y[], int num_c[]);
 
 __global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double cp_x[], double cp_y[], double* count);

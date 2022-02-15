@@ -3,8 +3,8 @@
 
 #define DATASET_SIZE    100000
 #define CLUSTER_SIZE    100
-#define THRESHOLD       5
-#define PERCENTAGE		0.8
+#define THRESHOLD       1e-50
+#define PERCENTAGE		0.95
 
 #define WRAPDIM 256
 #define WRAPDIM_C 32
@@ -15,9 +15,3 @@
 
 #define DEFINES
 #endif // !DEFINES
-
-/*
-URBAN DATASET
-360177
-469
-*/

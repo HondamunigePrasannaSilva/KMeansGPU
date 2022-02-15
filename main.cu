@@ -157,7 +157,6 @@ int main()
 
 
     while ((int) *count < PERCENTAGE * CLUSTER_SIZE)
-    //while (*isChange == 0)
     {
         
         cout << "Calculating cluster cycle: " << i + 1 << "..." << endl;
@@ -226,7 +225,8 @@ int main()
         cout << "End Updating centroids..." << endl;
         i++;
 
-    
+        if (i > 100)
+            break;
 
     }
 
@@ -252,6 +252,7 @@ int main()
     // printing the centroid after the kmeans methods
     printClusterPoint(cpx, cpy);
     
+    savaCSV(x, y, c);
 
     free(count);
 

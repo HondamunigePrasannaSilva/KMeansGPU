@@ -13,7 +13,6 @@ void printClusterPoint(double cp_x[], double cp_y[])
 void loadDataset(std::string DATASET_PATH, double x[], double y[], int c[])
 {
     std::ifstream myfile;
-    std::ifstream myfilepath;
     std::string   line, x_s, y_s;
 
     int  posC;
@@ -49,4 +48,17 @@ bool cudaErrorStatus(std::string cmd, cudaError_t cudaStatus, std::string var_na
         return true;
     }
     return false;
+}
+
+
+void savaCSV(double x[], double y[], int c[])
+{
+    std::ofstream myfile;
+
+    myfile.open("final.csv");
+    for (int i = 0; i < DATASET_SIZE; i++)
+    {
+        myfile << x[i] << "," << y[i] << "," << c[i] << "\n";
+
+    }
 }

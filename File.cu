@@ -100,53 +100,7 @@ __global__ void calculateDistanceCuda(double vect_x[], double vect_y[], double c
 
 }
 
-__global__ void updateCentroidsCuda(int vect_c[], double vect_x[], double vect_y[], double cp_x[], double cp_y[], int* change)
-{
-    double update_x, update_y;
-    int num_points, count = 0;
 
-    for (int i = 0; i < CLUSTER_SIZE; i++)
-    {
-        update_x = update_y = num_points = 0;
-
-        for (int j = 0; j < DATASET_SIZE; j++)
-        {
-            if (vect_c[j] == i)
-            {
-                update_x += vect_x[j];
-                update_y += vect_y[j];
-                num_points++;
-            }
-        }
-
-        // calculating che the center of the points given a cluster
-        if (num_points != 0)
-        {
-            update_x = update_x / num_points;
-            update_y = update_y / num_points;
-        }
-
-        //counting unchange centroid
-        double cond = distance(cp_x[i], cp_y[i], update_x, update_y);
-
-
-        if (cond <= THRESHOLD)
-            count++;
-
-        // updating centroids
-        if (num_points != 0 && cond > THRESHOLD)
-        {
-            cp_x[i] = update_x;
-            cp_y[i] = update_y;
-        }
-
-    }
-
-    if (count > PERCENTAGE * CLUSTER_SIZE)
-        *change = 1;
-    else
-        *change = 0;
-}
 
 __global__ void calculateCentroidMeans(int vect_c[], double vect_x[], double vect_y[], double sum_c_x[], double sum_c_y[], int num_c[])
 {
@@ -158,17 +112,15 @@ __global__ void calculateCentroidMeans(int vect_c[], double vect_x[], double vec
     __shared__ float s_vect_y[WRAPDIM];
     __shared__ int s_vect_c[WRAPDIM];
 
-   
-
     __shared__ double partial_sum_x[CLUSTER_SIZE];
     __shared__ double partial_sum_y[CLUSTER_SIZE];
     __shared__ int    partial_num[CLUSTER_SIZE];
+
 
     s_vect_x[threadIdx.x] = vect_x[idx];
     s_vect_c[threadIdx.x] = vect_c[idx];
     s_vect_y[threadIdx.x] = vect_y[idx];
     
-   
     __syncthreads();
 
     if (threadIdx.x == 0)
@@ -218,10 +170,14 @@ __global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double 
     if (idx >= CLUSTER_SIZE) return;
     for (int i = 0; i < WRAPDIM_C; i++)
         c[i] = 0;
-    // Calculating the means of the centroids
-    sum_c_x[idx] = sum_c_x[idx] / num_c[idx];
-    sum_c_y[idx] = sum_c_y[idx] / num_c[idx];
 
+    // Calculating the means of the centroids
+    if (num_c[idx] != 0)
+    {
+        sum_c_x[idx] = sum_c_x[idx] / num_c[idx];
+        sum_c_y[idx] = sum_c_y[idx] / num_c[idx];
+    }
+    
     // Checking the distance between the old and the new centroid
 
     double dist = distance(cp_x[idx], cp_y[idx], sum_c_x[idx], sum_c_y[idx]);
