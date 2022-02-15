@@ -209,8 +209,7 @@ __global__ void calculateCentroidMeans(int vect_c[], double vect_x[], double vec
 __global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double cp_x[], double cp_y[], double* count)
 {
     
-    // controllo della threashold
-    // fare un atomic per incrementare il contatore di centroidi non modificati
+
 
     const int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -246,7 +245,6 @@ __global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double 
             sum += c[i];
         }
         
-
         atomicAdd(count,sum);
     }
 

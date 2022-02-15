@@ -26,11 +26,16 @@
     <ClInclude Include="Intestazione.h">
       <Filter>File di intestazione</Filter>
     </ClInclude>
-    <ClInclude Include="kmeanscu.cuh">
-      <Filter>File di origine</Filter>
-    </ClInclude>
     <ClInclude Include="defines.h">
-      <Filter>File di origine</Filter>
+      <Filter>File di intestazione</Filter>
     </ClInclude>
+    <ClInclude Include="kmeanscu.cuh">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="utility.cpp">
+      <Filter>File di origine</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
