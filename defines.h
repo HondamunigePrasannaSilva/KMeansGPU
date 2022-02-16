@@ -1,10 +1,10 @@
 
 #ifndef DEFINES
 
-#define DATASET_SIZE    100000
-#define CLUSTER_SIZE    100
-#define THRESHOLD       1e-50
-#define PERCENTAGE		0.95
+#define DATASET_SIZE    1000000
+#define CLUSTER_SIZE    3
+#define THRESHOLD       1e-20
+#define PERCENTAGE		1
 
 #define WRAPDIM 256
 #define WRAPDIM_C 32
@@ -12,6 +12,10 @@
 #define BLOCKDIM_C (CLUSTER_SIZE+WRAPDIM_C-1)/WRAPDIM_C
 #define BLOCKDIM (DATASET_SIZE+WRAPDIM-1)/WRAPDIM
 
+#define NUM_CLUSTER PERCENTAGE*CLUSTER_SIZE
+
 
 #define DEFINES
 #endif // !DEFINES
+
+

@@ -108,15 +108,18 @@ __global__ void calculateCentroidMeans(int vect_c[], double vect_x[], double vec
 
     if (idx >= DATASET_SIZE) return;
 
-    __shared__ float s_vect_x[WRAPDIM];
-    __shared__ float s_vect_y[WRAPDIM];
+    __shared__ double s_vect_x[WRAPDIM];
+    __shared__ double s_vect_y[WRAPDIM];
     __shared__ int s_vect_c[WRAPDIM];
 
     __shared__ double partial_sum_x[CLUSTER_SIZE];
     __shared__ double partial_sum_y[CLUSTER_SIZE];
     __shared__ int    partial_num[CLUSTER_SIZE];
 
+  
 
+
+    // metto nella shared memory la porzione di dati che il blocco usera per fare i calcoli
     s_vect_x[threadIdx.x] = vect_x[idx];
     s_vect_c[threadIdx.x] = vect_c[idx];
     s_vect_y[threadIdx.x] = vect_y[idx];
@@ -131,10 +134,10 @@ __global__ void calculateCentroidMeans(int vect_c[], double vect_x[], double vec
             partial_sum_x[i] = partial_sum_y[i] = partial_num[i] = 0;
         }
         
-        for (int i = 0; i < CLUSTER_SIZE; i++)
+        for (int i = 0; i < WRAPDIM; i++)
         {
             j = s_vect_c[i];
-            if (j != -1)
+            if (j >= 0 && j < CLUSTER_SIZE)
             {
                 partial_sum_x[j] += s_vect_x[i];
                 partial_sum_y[j] += s_vect_y[i];
@@ -160,8 +163,6 @@ __global__ void calculateCentroidMeans(int vect_c[], double vect_x[], double vec
 
 __global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double cp_x[], double cp_y[], double* count)
 {
-    
-
 
     const int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -172,11 +173,10 @@ __global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double 
         c[i] = 0;
 
     // Calculating the means of the centroids
-    if (num_c[idx] != 0)
-    {
-        sum_c_x[idx] = sum_c_x[idx] / num_c[idx];
-        sum_c_y[idx] = sum_c_y[idx] / num_c[idx];
-    }
+    if (num_c[idx] == 0) num_c[idx] = 1;
+    
+    sum_c_x[idx] = sum_c_x[idx] / num_c[idx];
+    sum_c_y[idx] = sum_c_y[idx] / num_c[idx];
     
     // Checking the distance between the old and the new centroid
 
@@ -194,14 +194,19 @@ __global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double 
     }
     __syncthreads();  
     
+    // setting the partial sum vectors to 0
+    sum_c_x[idx] = 0;
+    sum_c_y[idx] = 0;
+    num_c[idx] = 0;
+
+    // caluculating unchange centroids
     if (threadIdx.x == 0)
     {
         double sum = 0;
         for (int i = 0; i < WRAPDIM_C; i++)
         {
             sum += c[i];
-        }
-        
+        } 
         atomicAdd(count,sum);
     }
 

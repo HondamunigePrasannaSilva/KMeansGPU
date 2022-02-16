@@ -5,15 +5,17 @@
 
 #include"kmeanscu.cuh"
 
+#include <chrono>
 
+using std::chrono::high_resolution_clock;
+using std::chrono::duration_cast;
 
 int main()
 {
     std::string   DATASET_PATH;
-    DATASET_PATH = "Datasets/dataset2/ds.txt";
+    DATASET_PATH = "Datasets/ds/data2.txt";
 
     double* count = (double*)malloc(sizeof(double));
-
     *count = 0;
 
     int i = 0;
@@ -44,8 +46,6 @@ int main()
     double* cudascy = 0;
     int*    cudanc  = 0;
 
-    int*    change = 0;
-
     double*    cudacount = 0;
 
     cudaError_t cudaStatus;
@@ -53,7 +53,6 @@ int main()
     cudaStatus = cudaMalloc((void**)&cudax, DATASET_SIZE * sizeof(double));
     if (cudaErrorStatus("cudaMalloc", cudaStatus, "cudax")) goto Error;
    
-
     cudaStatus = cudaMalloc((void**)&cuday, DATASET_SIZE * sizeof(double));
     if (cudaErrorStatus("cudaMalloc", cudaStatus, "cuday")) goto Error;
 
@@ -63,17 +62,11 @@ int main()
     cudaStatus = cudaMalloc((void**)&cudacpx, DATASET_SIZE * sizeof(double));
     if (cudaErrorStatus("cudaMalloc", cudaStatus, "cudacpx")) goto Error;
    
-
     cudaStatus = cudaMalloc((void**)&cudacpy, DATASET_SIZE * sizeof(double));
     if (cudaErrorStatus("cudaMalloc", cudaStatus, "cudacpy")) goto Error;
 
-
-    cudaStatus = cudaMalloc((void**)&change, sizeof(int));
-    if (cudaErrorStatus("cudaMalloc", cudaStatus, "change")) goto Error;
-
     cudaStatus = cudaMalloc((void**)&cudacount, sizeof(double));
     if (cudaErrorStatus("cudaMalloc", cudaStatus, "count")) goto Error;
-
 
     cudaStatus = cudaMalloc((void**)&cudascx, CLUSTER_SIZE * sizeof(double));
     if (cudaErrorStatus("cudaMalloc", cudaStatus, "cudascx")) goto Error;
@@ -152,17 +145,16 @@ int main()
     printClusterPoint(cpx, cpy);
 
 
-    
+
+    auto start = high_resolution_clock::now();
 
 
-
-    while ((int) *count < PERCENTAGE * CLUSTER_SIZE)
+    while (*count < NUM_CLUSTER)
     {
         
         cout << "Calculating cluster cycle: " << i + 1 << "..." << endl;
       
         calculateDistanceCuda<<<BLOCKDIM, WRAPDIM >>>(cudax, cuday, cudacpx, cudacpy, cudac);
-
 
         cudaStatus = cudaDeviceSynchronize();
         if (cudaStatus != cudaSuccess) {
@@ -218,17 +210,17 @@ int main()
         }
         cout << "count F " <<*count << endl;
 
-        //updateCentroidsCuda <<<1,1>>>(cudac, cudax, cuday, cudacpx, cudacpy, change);
-        //cudaStatus = cudaMemcpy(isChange, change, sizeof(int), cudaMemcpyDeviceToHost);
 
 
         cout << "End Updating centroids..." << endl;
         i++;
-
-        if (i > 100)
-            break;
-
     }
+
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<std::chrono::microseconds>(stop - start);
+    cout << "Time: " << duration.count() << " micro_s" << endl;
+
+
 
     cudaStatus = cudaMemcpy(cpx, cudacpx, CLUSTER_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
@@ -266,7 +258,6 @@ Error:
     cudaFree(cudascx);
     cudaFree(cudascy);
     cudaFree(cudanc);
-    cudaFree(change);
     cudaFree(cudacount);
 
 
