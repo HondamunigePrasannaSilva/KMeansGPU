@@ -116,9 +116,6 @@ __global__ void calculateCentroidMeans(int vect_c[], double vect_x[], double vec
     __shared__ double partial_sum_y[CLUSTER_SIZE];
     __shared__ int    partial_num[CLUSTER_SIZE];
 
-  
-
-
     // metto nella shared memory la porzione di dati che il blocco usera per fare i calcoli
     s_vect_x[threadIdx.x] = vect_x[idx];
     s_vect_c[threadIdx.x] = vect_c[idx];
@@ -173,7 +170,7 @@ __global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double 
         c[i] = 0;
 
     // Calculating the means of the centroids
-    if (num_c[idx] == 0) num_c[idx] = 1;
+    //if (num_c[idx] == 0) num_c[idx] = 1;
     
     sum_c_x[idx] = sum_c_x[idx] / num_c[idx];
     sum_c_y[idx] = sum_c_y[idx] / num_c[idx];
@@ -184,7 +181,7 @@ __global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double 
 
     __syncthreads();
     
-    if (dist < THRESHOLD)
+    if (dist <= THRESHOLD)
         c[threadIdx.x] = 1;
     else
     {
@@ -198,7 +195,7 @@ __global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double 
     sum_c_x[idx] = 0;
     sum_c_y[idx] = 0;
     num_c[idx] = 0;
-
+    
     // caluculating unchange centroids
     if (threadIdx.x == 0)
     {

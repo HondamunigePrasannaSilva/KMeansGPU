@@ -13,7 +13,7 @@ using std::chrono::duration_cast;
 int main()
 {
     std::string   DATASET_PATH;
-    DATASET_PATH = "Datasets/ds/data2.txt";
+    DATASET_PATH = "Datasets/dataset2/ds.txt";
 
     double* count = (double*)malloc(sizeof(double));
     *count = 0;
@@ -217,8 +217,8 @@ int main()
     }
 
     auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<std::chrono::microseconds>(stop - start);
-    cout << "Time: " << duration.count() << " micro_s" << endl;
+    auto duration = duration_cast<std::chrono::seconds>(stop - start);
+    cout << "Time: " << duration.count() << " sec" << endl;
 
 
 
