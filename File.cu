@@ -170,7 +170,7 @@ __global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double 
         c[i] = 0;
 
     // Calculating the means of the centroids
-    //if (num_c[idx] == 0) num_c[idx] = 1;
+    if (num_c[idx] == 0) num_c[idx] = 1;
     
     sum_c_x[idx] = sum_c_x[idx] / num_c[idx];
     sum_c_y[idx] = sum_c_y[idx] / num_c[idx];

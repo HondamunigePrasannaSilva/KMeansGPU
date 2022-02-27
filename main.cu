@@ -13,7 +13,7 @@ using std::chrono::duration_cast;
 int main()
 {
     std::string   DATASET_PATH;
-    DATASET_PATH = "Datasets/dataset2/ds.txt";
+    DATASET_PATH = "Datasets/Data/DatasetCluster/data128.csv";
 
     double* count = (double*)malloc(sizeof(double));
     *count = 0;
@@ -142,7 +142,7 @@ int main()
     
     cout << "Finish generating random centroids.." << endl;
 
-    printClusterPoint(cpx, cpy);
+    //printClusterPoint(cpx, cpy);
 
 
 
@@ -181,7 +181,7 @@ int main()
 
         cudaMemset(cudacount, 0, sizeof(double));
         *count = 0;
-        cout << "count I " << (int) *count << endl;
+        //cout << "count I " << (int) *count << endl;
         
         updateC<<<BLOCKDIM_C, WRAPDIM_C>>>(cudascx, cudascy, cudanc,cudacpx, cudacpy, cudacount);
 
@@ -208,7 +208,7 @@ int main()
             fprintf(stderr, "cudaMemcpy count failed!");
             goto Error;
         }
-        cout << "count F " <<*count << endl;
+        //cout << "count F " <<*count << endl;
 
 
 
@@ -217,8 +217,8 @@ int main()
     }
 
     auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<std::chrono::seconds>(stop - start);
-    cout << "Time: " << duration.count() << " sec" << endl;
+    auto duration = duration_cast<std::chrono::milliseconds>(stop - start);
+    cout << "Time: " << duration.count() << " millisec" << endl;
 
 
 
