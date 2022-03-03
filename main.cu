@@ -4,7 +4,7 @@
 #include"Intestazione.h"
 
 #include"kmeanscu.cuh"
-
+#include <vector>
 #include <chrono>
 
 using std::chrono::high_resolution_clock;
@@ -12,10 +12,19 @@ using std::chrono::duration_cast;
 
 int main()
 {
-    std::string   DATASET_PATH;
-    DATASET_PATH = "Datasets/Data/DatasetCluster/data128.csv";
 
+    std::string   DATASET_PATH;
+    DATASET_PATH = "Datasets/Data/Dataset16/data2.csv";
+
+    std::vector<int> tempi;
+    
     double* count = (double*)malloc(sizeof(double));
+
+  
+    static double x[DATASET_SIZE];
+    static double y[DATASET_SIZE];
+    static int    c[DATASET_SIZE];
+
     *count = 0;
 
     int i = 0;
@@ -24,10 +33,7 @@ int main()
 
     // declaring array for dataset point and for centroid points
     
-    static double  x[DATASET_SIZE];
-    static double  y[DATASET_SIZE];
-    static int     c[DATASET_SIZE];
-    
+ 
     double cpx[CLUSTER_SIZE];   // array of centroid, x value
     double cpy[CLUSTER_SIZE];   // array of centroid, y value
 
@@ -220,6 +226,7 @@ int main()
     auto duration = duration_cast<std::chrono::milliseconds>(stop - start);
     cout << "Time: " << duration.count() << " millisec" << endl;
 
+    tempi.push_back(duration.count());
 
 
     cudaStatus = cudaMemcpy(cpx, cudacpx, CLUSTER_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
@@ -242,11 +249,12 @@ int main()
 
 
     // printing the centroid after the kmeans methods
-    printClusterPoint(cpx, cpy);
+    //printClusterPoint(cpx, cpy);
     
-    savaCSV(x, y, c);
+    //savaCSV(x, y, c);
 
     free(count);
+
 
 Error:
     // free dei puntatori
@@ -259,8 +267,6 @@ Error:
     cudaFree(cudascy);
     cudaFree(cudanc);
     cudaFree(cudacount);
-
-
 
 
 

@@ -60,12 +60,6 @@ __global__ void calculateDistanceCuda(double vect_x[], double vect_y[], double c
     double dist, temp;
     int cluster_class;
 
-    __shared__ double s_vect_x[WRAPDIM];
-    s_vect_x[threadIdx.x] = vect_x[idx];
-
-    __shared__ double s_vect_y[WRAPDIM];
-    s_vect_y[threadIdx.x] = vect_y[idx];
-
     __shared__ double s_vect_cx[CLUSTER_SIZE];
     __shared__ double s_vect_cy[CLUSTER_SIZE];
 
@@ -82,12 +76,12 @@ __global__ void calculateDistanceCuda(double vect_x[], double vect_y[], double c
     // calculating distance between dataset point and centroid
     // selecting the centroid with minium distance
 
-    dist = distance(s_vect_x[threadIdx.x], s_vect_y[threadIdx.x], s_vect_cx[0], s_vect_cy[0]);
+    dist = distance(vect_x[idx], vect_y[idx], s_vect_cx[0], s_vect_cy[0]);
     cluster_class = 0;
     
     for (int j = 0; j < CLUSTER_SIZE; j++)
     {
-        temp = distance(s_vect_x[threadIdx.x], s_vect_y[threadIdx.x], s_vect_cx[j], s_vect_cy[j]);
+        temp = distance(vect_x[idx], vect_y[idx], s_vect_cx[j], s_vect_cy[j]);
         if (dist > temp) // looking for the minimum distance given a point
         {
             cluster_class = j;
@@ -166,8 +160,8 @@ __global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double 
     __shared__ int c[WRAPDIM_C];
 
     if (idx >= CLUSTER_SIZE) return;
-    for (int i = 0; i < WRAPDIM_C; i++)
-        c[i] = 0;
+
+    for (int i = 0; i < WRAPDIM_C; i++) c[i] = 0;
 
     // Calculating the means of the centroids
     if (num_c[idx] == 0) num_c[idx] = 1;
