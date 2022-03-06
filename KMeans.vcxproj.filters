@@ -38,7 +38,4 @@
       <Filter>File di origine</Filter>
     </ClCompile>
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\..\..\Desktop\GIT\Parallel-K-Means\ds1.txt" />
-  </ItemGroup>
 </Project>

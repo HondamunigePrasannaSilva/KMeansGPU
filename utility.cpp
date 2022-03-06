@@ -1,12 +1,28 @@
 #include "defines.h"
 #include "Intestazione.h"
+#include <stdlib.h>     /* srand, rand */
+
+
+void randomCentroids(double cp_x[], double cp_y[], double* vect_x, double* vect_y)
+{
+    srand(time(NULL));
+
+    // calculating max and min of the points to generate random centroids
+    int j = 0;
+
+    for (int i = 0; i < CLUSTER_SIZE; i++)
+    {
+        j = rand() % DATASET_SIZE;
+        cp_x[i] = vect_x[j];
+        cp_y[i] = vect_y[j];
+    }
+}
 
 void printClusterPoint(double cp_x[], double cp_y[])
 {
     for (int i = 0; i < CLUSTER_SIZE; i++)
     {
         cout << cp_x[i] << "," << cp_y[i] << endl;
-
     }
 }
 
@@ -32,9 +48,7 @@ void loadDataset(std::string DATASET_PATH, double x[], double y[], int c[])
         x[i] = stod(x_s);
         y[i] = stod(y_s);
         c[i] = -1;
-
     }
-
     myfile.close();
 }
 
@@ -51,7 +65,7 @@ bool cudaErrorStatus(std::string cmd, cudaError_t cudaStatus, std::string var_na
 }
 
 
-void savaCSV(double x[], double y[], int c[])
+void saveCSV(double x[], double y[], int c[])
 {
     std::ofstream myfile;
 

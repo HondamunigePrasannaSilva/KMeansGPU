@@ -27,13 +27,9 @@ static __inline__ __device__ double atomicAdd(double* address, double val) {
     return __longlong_as_double(old);
 }
 
-
 #endif
 
 
-__device__ int random(unsigned int seed, int i);
-
-__global__ void randomCentroidsCuda(double cp_x[], double cp_y[], double* vect_x, double* vect_y, unsigned int seed);
 
 __device__  double distance(double x1_point, double y1_point, double x2_point, double y2_point);
 
@@ -42,6 +38,10 @@ __global__ void calculateDistanceCuda(double vect_x[], double vect_y[], double c
 __global__ void calculateCentroidMeans(int vect_c[], double vect_x[], double vect_y[], double sum_c_x[], double sum_c_y[], int num_c[]);
 
 __global__ void updateC(double sum_c_x[], double sum_c_y[], int num_c[], double cp_x[], double cp_y[], double* count);
+
+__global__ void updateS(double sum_c_x[], double sum_c_y[], int num_c[], double cp_x[], double cp_y[], double* count);
+
+
 
 #define KMEANSCU
 

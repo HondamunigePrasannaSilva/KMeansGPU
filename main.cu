@@ -15,8 +15,6 @@ int main()
 
     std::string   DATASET_PATH;
     DATASET_PATH = "Datasets/Data/Dataset16/data2.csv";
-
-    std::vector<int> tempi;
     
     double* count = (double*)malloc(sizeof(double));
 
@@ -29,7 +27,7 @@ int main()
 
     int i = 0;
     
-    cout << "DATASET SIZE: " << DATASET_SIZE << " CLUSTER SIZE: " << CLUSTER_SIZE << " ITERATIONS: " << endl;
+    cout << "DATASET SIZE: " << DATASET_SIZE << " CLUSTER SIZE: " << CLUSTER_SIZE << endl;
 
     // declaring array for dataset point and for centroid points
     
@@ -94,12 +92,6 @@ int main()
 
 
     
-
-
-    // -----------------------------------------
-    
-   
-    
     loadDataset(DATASET_PATH, x, y, c);
 
     cout << "Finish loading data.." << endl;
@@ -112,121 +104,99 @@ int main()
     cudaStatus = cudaMemcpy(cuday, y, DATASET_SIZE * sizeof(double), cudaMemcpyHostToDevice);
     if (cudaErrorStatus("cudaMemcpy", cudaStatus, "y->cuday")) goto Error;
 
-   
-    // -----------------------------------------------------
 
 
     // generating random centroid for the first step of the method
+
     cout << "Generating first " << CLUSTER_SIZE << " centroids.." << endl;
 
-    randomCentroidsCuda <<< BLOCKDIM_C, WRAPDIM_C >> > (cudacpx, cudacpy, cudax, cuday, time(NULL));
+    randomCentroids(cpx, cpy, x, y);
 
-    cudaStatus = cudaGetLastError();
-    if (cudaErrorStatus("randomCentroidCuda", cudaStatus, cudaGetErrorString(cudaStatus))) goto Error;
+    cout << "Finish generating random centroids.." << endl;
 
-    cudaStatus = cudaDeviceSynchronize();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching randomCentroidCuda!\n", cudaStatus);
-        goto Error;
-    }
-  
-    
-
-    // -----------------------------------------
-
-       // Copy output vector from GPU buffer to host memory.
-    cudaStatus = cudaMemcpy(cpx, cudacpx, CLUSTER_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
+    // Copy output vector from GPU buffer to host memory.
+    cudaStatus = cudaMemcpy(cudacpx, cpx, CLUSTER_SIZE * sizeof(double), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy vect_cpx failed!");
         goto Error;
     }
-    cudaStatus = cudaMemcpy(cpy, cudacpy, CLUSTER_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(cudacpy, cpy, CLUSTER_SIZE * sizeof(double), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy vect_cpy failed!");
         goto Error;
     }
-    
-    cout << "Finish generating random centroids.." << endl;
-
-    //printClusterPoint(cpx, cpy);
-
-
 
     auto start = high_resolution_clock::now();
 
-
+    cout << "Calculating ...."<< endl;
     while (*count < NUM_CLUSTER)
     {
-        
-        cout << "Calculating cluster cycle: " << i + 1 << "..." << endl;
-      
-        calculateDistanceCuda<<<BLOCKDIM, WRAPDIM >>>(cudax, cuday, cudacpx, cudacpy, cudac);
+        calculateDistanceCuda<<<BLOCKDIM, BLOCK >>>(cudax, cuday, cudacpx, cudacpy, cudac);
 
         cudaStatus = cudaDeviceSynchronize();
-        if (cudaStatus != cudaSuccess) {
+        /*if (cudaStatus != cudaSuccess) {
             fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching calculateDistanceCuda!\n", cudaStatus);
             goto Error;
-        }
-
-        cout << "End calculating cluster cycle: " << i + 1 << endl;
-
-        cout << "Updating centroids..." << endl;
-
+        }*/
         
-        calculateCentroidMeans << <BLOCKDIM, WRAPDIM >> >(cudac, cudax, cuday, cudascx, cudascy, cudanc);
+        calculateCentroidMeans << <BLOCKDIM, BLOCK >> >(cudac, cudax, cuday, cudascx, cudascy, cudanc);
 
-        cudaStatus = cudaGetLastError();
+        /*cudaStatus = cudaGetLastError();
         if (cudaErrorStatus("calculateCentroidMeans ", cudaStatus, cudaGetErrorString(cudaStatus))) goto Error;
-
+        */
 
         cudaStatus = cudaDeviceSynchronize();
-        if (cudaStatus != cudaSuccess) {
+        /*if (cudaStatus != cudaSuccess) {
             fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching calculateCentroidMeans!\n", cudaStatus);
             goto Error;
-        }
+        }*/
 
         cudaMemset(cudacount, 0, sizeof(double));
         *count = 0;
-        //cout << "count I " << (int) *count << endl;
-        
-        updateC<<<BLOCKDIM_C, WRAPDIM_C>>>(cudascx, cudascy, cudanc,cudacpx, cudacpy, cudacount);
 
+        updateC<<<GRID_C, BLOCK_C>>>(cudascx, cudascy, cudanc,cudacpx, cudacpy, cudacount);
+
+        //updateS <<<1, 1 >>> (cudascx, cudascy, cudanc, cudacpx, cudacpy, cudacount);
+
+        cudaStatus = cudaDeviceSynchronize();
 
         cudaMemset(cudascx, 0, CLUSTER_SIZE * sizeof(double));
         cudaMemset(cudascy, 0, CLUSTER_SIZE * sizeof(double));
         cudaMemset(cudanc, 0, CLUSTER_SIZE * sizeof(int));
+        
 
 
+        /*
         cudaStatus = cudaGetLastError();
         if (cudaErrorStatus("updateC ", cudaStatus, cudaGetErrorString(cudaStatus))) goto Error;
+        
 
-
-        cudaStatus = cudaDeviceSynchronize();
+       
         if (cudaStatus != cudaSuccess) {
             fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching updateC!\n", cudaStatus);
             goto Error;
         }
-
-      
-       
+        */
+        
         cudaStatus = cudaMemcpy(count, cudacount, sizeof(double), cudaMemcpyDeviceToHost);
+        
+
+        /*
         if (cudaStatus != cudaSuccess) {
             fprintf(stderr, "cudaMemcpy count failed!");
-            goto Error;
-        }
-        //cout << "count F " <<*count << endl;
+            goto Error; }
+        */
 
-
-
-        cout << "End Updating centroids..." << endl;
         i++;
     }
+    
+
+    cout << "End calculating..." << endl;
 
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<std::chrono::milliseconds>(stop - start);
     cout << "Time: " << duration.count() << " millisec" << endl;
 
-    tempi.push_back(duration.count());
 
 
     cudaStatus = cudaMemcpy(cpx, cudacpx, CLUSTER_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
@@ -245,13 +215,11 @@ int main()
         goto Error;
     }
     
-
-
-
     // printing the centroid after the kmeans methods
+    
     //printClusterPoint(cpx, cpy);
     
-    //savaCSV(x, y, c);
+    saveCSV(x, y, c);
 
     free(count);
 
@@ -267,7 +235,5 @@ Error:
     cudaFree(cudascy);
     cudaFree(cudanc);
     cudaFree(cudacount);
-
-
 
 }

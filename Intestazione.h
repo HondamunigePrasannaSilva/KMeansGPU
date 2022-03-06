@@ -24,10 +24,11 @@ void printClusterPoint(double cp_x[], double cp_y[]);
 
 void loadDataset(std::string DATA_PATH, double x[], double y[], int c[]);
 
-
 bool cudaErrorStatus(std::string cmd, cudaError_t cudaStatus, std::string var_name);
 
-void savaCSV(double x[], double y[], int c[]);
+void saveCSV(double x[], double y[], int c[]);
+
+void randomCentroids(double cp_x[], double cp_y[], double* vect_x, double* vect_y);
 
 
 #define INTESTAZIONE
